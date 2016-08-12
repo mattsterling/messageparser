@@ -10,15 +10,15 @@ import(
 // Link symbolizes a simple mapping of a URL and the related
 // page title.
 type Link struct {
-	URL string
-	Title string
+	URL string `json: "url"`
+	Title string `json: "title, omitempty"`
 }
 
 // MessageContent provides information about message.
 type MessageContent struct {
-	mentions []string
-	emojis []string
-	links []Link
+	Mentions []string `json: "mentions, omitempty"`
+	Emojis []string `json: "emoticons, omitempty"`
+	Links []Link `json: "links, omitempty"`
 }
 
 
@@ -40,7 +40,7 @@ func parseUrl(bites []byte, start *int) *Link {
 	fmt.Println("URL PREFIX:", string(bites[*start: end]))
 	if urlStart == string(bites[*start: end]) {
 
-		link := ParseSection(bites, start, space, -1)
+		link := ParseSection(bites, start, space, -1, true)
 		if "" != link {
 			return &Link{URL: link}
 		}
@@ -49,7 +49,7 @@ func parseUrl(bites []byte, start *int) *Link {
 	return nil
 }
 
-func ParseSection(data []byte, start *int, end byte, maxSize int) string {
+func ParseSection(data []byte, start *int, end byte, maxSize int, inclusive bool) string {
 	fmt.Println(fmt.Sprintf("Parsing section from index %d ending with character '%s'", *start, string(end)))
 	// Loop until we reach the end or we reach the end of the buffer.
 	tmp := *start
@@ -57,10 +57,9 @@ func ParseSection(data []byte, start *int, end byte, maxSize int) string {
 		fmt.Println("ParseSection index:", tmp)
 		if end == data[tmp] {
 			fmt.Println("Found delimeter at index: ", tmp)
-			tmp++
 			break // We found our stopping point (Could be the end of the buffer)
 		} else if tmp == len(data) {
-			// The end is nigh
+			// The end of the buffer
 			break;
 		}
 		tmp++ // Increment to the next
@@ -72,17 +71,53 @@ func ParseSection(data []byte, start *int, end byte, maxSize int) string {
 	size := (tmp - *start) - 2
 	if -1 != maxSize && size > maxSize {
 		fmt.Println(fmt.Sprintf("Section is too big between delimeters, will skip. Size = %d", size))
-		*start = tmp - 1 // Skip outer loop from double checking indices we just touched
+		*start = tmp // Skip outer loop from double checking indices we just touched
 		return ""
 	}
 
-	// Update the start index for the outer loop to continue where this one left off
-	// and return the word as a string
-	word := strings.TrimSpace(string(data[*start: tmp]))
+
+
+	// If the parse is not inclusive include exclude the start/stop delimiters
+	word := ""
+	if !inclusive {
+		word = strings.TrimSpace(string(data[*start + 1: tmp]))
+
+	} else {
+		// Inclusive delimiter parse
+		word = strings.TrimSpace(string(data[*start: tmp + 1]))
+	}
+
 	fmt.Println("Found section:", word)
-	*start = tmp - 1 // Start where the slice ended
+	*start = tmp // Start where the slice ended for the outer loop
 	return word
 
+
+}
+
+
+
+// Appends a message to a slice. A slice will be created
+// if the one passed in is nil.
+func appendString(s *[]string, message *string){
+	if nil == s {
+		fmt.Println("Appending string.")
+		s = &[]string{*message}
+		return
+	}
+	*s = append(*s, *message)
+}
+
+
+// Appends a Link to a slice. A slice will be created
+// if the one passed in is nil.
+func appendLink(s *[]Link, link *Link) {
+	fmt.Println("Link slice", s)
+	if nil == s {
+		fmt.Println("Appending link.")
+		s = &[]Link{*link}
+		return
+	}
+	*s = append(*s, *link)
 }
 
 
@@ -90,11 +125,10 @@ func ParseMessageContents(data *bytes.Buffer) *MessageContent {
 
 	bites := data.Bytes()
 
-	// Pre-allocate some slices for the metadata we find.
-	// Could be memory inefficient, an area worth checking out.
-	mentions := make([]string, 5)
-	emojis := make([]string, 5)
-	links := make([]Link, 5)
+	// Set up some slice references.
+	var mentions []string
+	var emojis []string
+	var links []Link
 
 	// N iteration loop
 	fmt.Println("Buffer size: ", len(bites))
@@ -105,17 +139,17 @@ func ParseMessageContents(data *bytes.Buffer) *MessageContent {
 		switch {
 
 		case mentionPrefix == b:
-			m := ParseSection(bites, &current, space, -1)
+			m := ParseSection(bites, &current, space, -1, false)
 			if "" != m {
-				mentions = append(mentions, m)
+				appendString(&mentions, &m)
 			}
 			continue
 
 		case emojiStart == b:
 			// Emojis cannot be longer than 15 (not including the '()' )
-			e := ParseSection(bites, &current, emojiStop, 15)
+			e := ParseSection(bites, &current, emojiStop, 15, false)
 			if "" != e {
-				emojis = append(emojis, e)
+				appendString(&emojis, &e)
 			}
 			continue
 
@@ -124,7 +158,7 @@ func ParseMessageContents(data *bytes.Buffer) *MessageContent {
 			l := parseUrl(bites, &current)
 			if nil != l {
 				// Tell the another go routine to process the link
-				links = append(links, *l)
+				appendLink(&links, l)
 			}
 			continue
 
@@ -134,6 +168,7 @@ func ParseMessageContents(data *bytes.Buffer) *MessageContent {
 		}
 	}
 
-	return &MessageContent{mentions, emojis, links}
+	fmt.Println("Pointers: ", mentions, emojis, links)
+	return &MessageContent{Mentions: mentions, Emojis: emojis, Links: links}
 }
 

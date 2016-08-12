@@ -22,7 +22,7 @@ func main() {
 	// TODO: Load logging dependency
 	// TODO: Parse env variables
 
-	// TODO: Create parser.
+	// TODO: Update emoji parser to handle only alphanumeric
 	// TODO: Create HTTP client to get page title of any links found in the text.
 	// TODO: Create tests.
 	// TODO: Update Readme.
