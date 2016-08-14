@@ -1,11 +1,12 @@
-package message_parser
+package http
 
-import(
-	"net/http"
+import (
 	"bytes"
-	"github.com/messageparser/parser"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/messageparser/parser"
 )
 
 func ParseMessageHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,10 +29,9 @@ func ParseMessageHandler(w http.ResponseWriter, r *http.Request) {
 	// Larger messages shouldn't read into memory like this and should
 	// incrementally read/parse at the same time.
 	defer r.Body.Close()
-	buffer :=  bytes.NewBuffer(make([]byte, 0, r.ContentLength))
+	buffer := bytes.NewBuffer(make([]byte, 0, r.ContentLength))
 	buffer.ReadFrom(r.Body)
 	content := parser.ParseMessageContents(buffer)
-	fmt.Println("Content:", )
 	b, err := json.Marshal(*content)
 	if nil != err {
 		//TODO: 500 internal server error

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"net/http"
-	"github.com/messageparser/http"
+	"os"
+
+	ph "github.com/messageparser/http"
 )
 
 func main() {
@@ -17,16 +18,11 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Println("Symbols:", byte('@'), byte('('),  byte(')'), byte(' '), byte('h'))
-
 	// TODO: Load logging dependency
 	// TODO: Parse env variables
-
-	// TODO: Update emoji parser to handle only alphanumeric
-	// TODO: Create HTTP client to get page title of any links found in the text.
 	// TODO: Create tests.
 	// TODO: Update Readme.
 
-	http.HandleFunc("/v1/message", message_parser.ParseMessageHandler)
+	http.HandleFunc("/v1/message", ph.ParseMessageHandler)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }
