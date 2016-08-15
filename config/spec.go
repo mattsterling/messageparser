@@ -15,7 +15,7 @@ var GlobalConfig = GetConfig()
 // of this program.
 type Config struct {
 	Port    int
-	MsgSize int
+	MsgSize int64
 }
 
 // GetConfig will parse the environment variables and return
