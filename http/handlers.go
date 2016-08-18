@@ -19,23 +19,25 @@ func ParseMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if "POST" != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Provided operation is not allowed."))
+		return
 	}
 
 	// In a future iteration is probably ideal to cap the message size
 	if 0 == r.ContentLength {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Empty messages are not allowed."))
-
-	} else if conf.GlobalConfig.MsgSize != -1 && conf.GlobalConfig.MsgSize < r.ContentLength {
+		return
+	} else if conf.GlobalConfig.MsgSize != 0 && conf.GlobalConfig.MsgSize < r.ContentLength {
 		// It's too big.
 		w.WriteHeader(http.StatusBadRequest)
-		format := "Message too large, must be smaller than %s"
+		format := "Message too large, must be smaller than %d chars."
 		w.Write([]byte(fmt.Sprintf(format, conf.GlobalConfig.MsgSize)))
-
+		return
 	} else if "text/plain" != r.Header.Get("Content-Type") {
 		// Bad MIME type reject the request for unsupported type
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		w.Write([]byte("A raw message should be supplied via text/plain."))
+		return
 	}
 
 	// Read in the chat messages. Here we assume messages are small.
@@ -53,6 +55,7 @@ func ParseMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if nil != err {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error creating JSON resp. Please contact the Admin."))
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

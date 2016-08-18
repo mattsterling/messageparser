@@ -18,22 +18,22 @@ func main() {
 
 	// Load configuration
 	config := conf.GlobalConfig
-	log.Debug("Configuration: {}", config)
+	log.Debug("Configuration: ", config)
 
 	if 0 == config.Port {
 		log.Info("Port not provided, defaulting to 8080.")
 		config.Port = 8080
 	}
 
-	// TODO: Fix URL parsing. Validate with URL.
 	// TODO: Create tests.
 	// TODO: Update Readme.
+	// TODO: pprof results.
 
 	http.HandleFunc("/v1/message", handlers.ParseMessageHandler)
 	http.HandleFunc("/health", handlers.HealthCheck)
 
 	// Get to business
-	log.Info("Starting Message Parsing server on port", config.Port)
+	log.Info("Starting Message Parsing server on port ", config.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
 
 }

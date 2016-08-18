@@ -17,7 +17,7 @@ func Get(url *string) (*http.Response, error) {
 
 	req, err := http.NewRequest("GET", *url, nil)
 	if nil != err {
-		log.Error("Error occured creating HTTP request for url:", *url, err)
+		log.Error("Error occured creating HTTP request for url: ", *url, err)
 		return nil, err
 
 	}
